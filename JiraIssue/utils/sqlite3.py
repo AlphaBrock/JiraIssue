@@ -9,23 +9,23 @@
 """
 import sqlite3
 import threading
-from utils.readSetting import Config
-from utils.logger import Logger
+import JiraIssue.utils.readSetting
+from JiraIssue.utils.logger import Logger
 
 sqliteMutex = threading.Lock()
 
-log = Logger(filename="log/sqlite.log")
+log = Logger(logname="db")
 
 
-class Database(Config):
+class Database(object):
 
     def __init__(self):
-        super(Database, self).__init__()
+        pass
+        # super(Database, self).__init__()
 
-    def initDb(self):
+    def initDb(self, dbTable: str):
         con = sqlite3.connect(self.dbPath)
-        dbTable = "defaultVideo"
-        videoInfo = '''CREATE TABLE IF NOT EXISTS %s
+        sql = '''CREATE TABLE IF NOT EXISTS %s
                 (
                   id  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                   videoId    VARCHAR(20),
@@ -38,7 +38,7 @@ class Database(Config):
         ''' % dbTable
 
         cur = con.cursor()
-        cur.execute(videoInfo)
+        cur.execute(sql)
         con.commit()
         con.close()
 
@@ -49,7 +49,7 @@ class Database(Config):
         :return:
         """
         with sqliteMutex:
-            con = sqlite3.connect(self.dbPath)
+            con = sqlite3.connect("C:\github\JiraIssue\db.sqlite3")
             cur = con.cursor()
             cur.execute(sql)
             con.close()
@@ -62,7 +62,7 @@ class Database(Config):
         :return:
         """
         with sqliteMutex:
-            con = sqlite3.connect(self.dbPath)
+            con = sqlite3.connect("C:\github\JiraIssue\db.sqlite3")
             cur = con.cursor()
             try:
                 cur.execute(sql)

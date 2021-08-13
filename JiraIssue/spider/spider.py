@@ -12,9 +12,9 @@ import json
 import requests
 from lxml import etree
 
-from JiraIssue.utils.logger import Logger
+from JiraIssue.utils.logger import Log
 
-log = Logger(loggeNname="spider")
+log = Log('__name__').getLog()
 
 
 class Jira(object):
@@ -38,7 +38,7 @@ class Jira(object):
             html = etree.HTML(html, etree.HTMLParser())
             return html
         except Exception as e:
-            log.logger.exception(str(e))
+            log.exception(str(e))
             return None
 
     @staticmethod
@@ -51,7 +51,7 @@ class Jira(object):
                     return response
                 return None
             except Exception as e:
-                log.logger.exception(json.dumps(kwargs, ensure_ascii=False) + "获取异常:[{}]".format(str(e)))
+                log.exception(json.dumps(kwargs, ensure_ascii=False) + "获取异常:[{}]".format(str(e)))
                 return None
 
         try:
@@ -61,7 +61,7 @@ class Jira(object):
                 return response
             return None
         except Exception as e:
-            log.logger.exception(json.dumps(kwargs, ensure_ascii=False) + "获取异常:[{}]".format(str(e)))
+            log.exception(json.dumps(kwargs, ensure_ascii=False) + "获取异常:[{}]".format(str(e)))
             return None
 
     def login(self):
@@ -87,7 +87,7 @@ class Jira(object):
         url = "https://{}".format(self.BaseUrl)
         result = self.httpRequests(url=url, method="GET", headers=self.Headers)
         cookieToken = result.headers["Set-Cookie"].split(";")[0].replace("lout", "lin")
-        self.Headers["Cookie"] = cookieJsessionId+";"+cookieToken
+        self.Headers["Cookie"] = cookieJsessionId + ";" + cookieToken
 
     def getIssueLists(self, jql: str, filterId: str):
         """
@@ -116,9 +116,10 @@ class Jira(object):
         :return:
         """
         url = "https://{}/browse/RZY-{}".format(self.BaseUrl, issueKey)
-        log.logger.debug("issueKey:{}".format(url))
+        log.debug("issueKey:{}".format(url))
+        log.debug(json.dumps(self.Headers))
         result = self.httpRequests(url=url, method="GET", headers=self.Headers)
-        parseHtml = self.parseResults(result)
+        parseHtml = self.parseResults(result.text)
 
         issueTitle = parseHtml.xpath(
             "//header[contains(@class, 'aui-page-header')]/div[contains(@class, 'aui-page-header-inner')]/div[contains(@class, 'aui-page-header-main')]/h1/text()")[
@@ -164,14 +165,18 @@ class Jira(object):
         # issue日期
         issueCreateTime = "".join(parseHtml.xpath('//*[@id="created-val"]/time/@datetime')).replace("\n",
                                                                                                     "").replace(
-            " ", "")
+            " ", "").replace("T", " ").replace("+0800", "")
         issueUpdateTime = "".join(parseHtml.xpath('//*[@id="updated-val"]/time/@datetime')).replace("\n",
                                                                                                     "").replace(
-            " ", "")
-        issueData = {"URL": url, "issueTitle": issueTitle, "issueType": issueType, "issueStatus": issueStatus, "issuePriority": issuePriority,
-                     "issueResolution": issueResolution, "issueAffectsVersions": issueAffectsVersions, "issueFixVersions": issueFixVersions,
-                     "issueComponents": issueComponents, "issueLabels": issueLabels, "issueDescription": issueDescription, "issueAssignee": issueAssignee,
-                     "issueReporter": issueReporter, "issueCreateTime": issueCreateTime, "issueUpdateTime": issueUpdateTime}
+            " ", "").replace("T", " ").replace("+0800", "")
+        issueData = {"url": url, "issueTitle": issueTitle, "issueType": issueType, "issueStatus": issueStatus,
+                     "issuePriority": issuePriority,
+                     "issueResolution": issueResolution, "issueAffectsVersions": issueAffectsVersions,
+                     "issueFixVersions": issueFixVersions,
+                     "issueComponents": issueComponents, "issueLabels": issueLabels,
+                     "issueDescription": issueDescription, "issueAssignee": issueAssignee,
+                     "issueReporter": issueReporter, "issueCreateTime": issueCreateTime,
+                     "issueUpdateTime": issueUpdateTime}
 
-        log.logger.info(json.dumps(issueData, ensure_ascii=False))
+        log.debug(json.dumps(issueData, ensure_ascii=False))
         return issueData
