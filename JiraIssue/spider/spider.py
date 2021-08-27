@@ -8,21 +8,29 @@
 -------------------------------------------------
 """
 import json
+import logging
+import time
 
 import requests
+import urllib3
 from lxml import etree
 
-from JiraIssue.utils.logger import Log
+from api.models import RZY
+import configparser, os
 
-log = Log('__name__').getLog()
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+log = logging.getLogger("django.console")
 
 
 class Jira(object):
 
-    def __init__(self, BaseUrl, JiraUserName, JiraUserPasswd):
-        self.BaseUrl = BaseUrl
-        self.JiraUserName = JiraUserName
-        self.JiraUserPasswd = JiraUserPasswd
+    def __init__(self):
+        cf = configparser.ConfigParser()
+        cf.read(os.getcwd() + "/JiraIssue/config.ini")
+        self.BaseUrl = cf.get('Jira', 'JiraBaseUrl')
+        self.JiraUserName = cf.get('Jira', 'JiraUserName')
+        self.JiraUserPasswd = cf.get('Jira', 'JiraUserPasswd')
         self.Headers = {
             'Host': self.BaseUrl,
             'Origin': 'https://{}'.format(self.BaseUrl),
@@ -180,3 +188,18 @@ class Jira(object):
 
         log.debug(json.dumps(issueData, ensure_ascii=False))
         return issueData
+
+    def spider(self, startIndex, endIndex):
+        issueDatas = []
+        for issueKey in range(startIndex, endIndex):
+            try:
+                issueData = self.getIssueHtmlData(str(issueKey))
+                log.info(json.dumps(issueData, ensure_ascii=False))
+                issueDatas.append(RZY(issuePrefix=issueKey, issueTitle=issueData.get("issueTitle"), issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"), issuePriority=issueData.get("issuePriority"), issueResolution=issueData.get("issueResolution"), issueAffectsVersions=issueData.get("issueAffectsVersions"), issueComponents=issueData.get("issueComponents"), issueFixVersions=issueData.get("issueFixVersions"), issueLabels=issueData.get("issueLabels"), issueDescription=issueData.get("issueDescription"), issueAssignee=issueData.get("issueAssignee"), issueReporter=issueData.get("issueReporter"), issueCreateTime=issueData.get("issueCreateTime"), issueUpdateTime=issueData.get("issueUpdateTime")))
+            except Exception as e:
+                log.exception(str(e))
+            finally:
+                time.sleep(1)
+
+        RZY.objects.bulk_create(issueDatas)
+        log.info("执行完毕")

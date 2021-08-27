@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import configparser, os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    "api",
+    "django_apscheduler",
+    "JiraIssue.spider",
 ]
 
 MIDDLEWARE = [
@@ -125,3 +129,82 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'simple': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(filename)s:%(module)s.%(funcName)s:%(lineno)d] [%(process)d] [%(threadName)s] %(message)s'
+        },
+        'standard': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(filename)s:%(module)s.%(funcName)s:%(lineno)d] [%(process)d] [%(threadName)s] %(message)s'
+        }
+    },
+    'filters': {
+    },
+    'handlers': {
+        'null': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+        'requestfile': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': 'logs/request.log',
+            'when': 'D',
+            'backupCount': 10,
+            'formatter': 'standard',
+            'encoding': 'utf-8'
+        },
+        'spiderfile': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': 'logs//spider.log',
+            'when': 'W0',
+            'backupCount': 10,
+            'formatter': 'standard',
+            'encoding': 'utf-8'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['null'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'django.console': {
+            'handlers': ['console'],
+            'propagate': False,
+            'level': 'DEBUG',
+        },
+        'django.request': {
+            'handlers': ['requestfile'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.spider': {
+            'handlers': ['spiderfile'],
+            'level': 'INFO',
+            'propagate': False,
+        }
+    }
+}
+
+try:
+    cf = configparser.ConfigParser()
+    cf.read(os.getcwd() + "/JiraIssue/config.ini")
+    JiraBaseUrl = cf.get('Jira', 'JiraBaseUrl')
+    JiraUserName = cf.get('Jira', 'JiraUserName')
+    JiraUserPasswd = cf.get('Jira', 'JiraUserPasswd')
+except Exception as e:
+    print(e)
+
+TIME_ZONE = 'Asia/Shanghai'
+USE_TZ = False
