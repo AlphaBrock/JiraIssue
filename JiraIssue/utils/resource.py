@@ -7,11 +7,30 @@
    date        :    2021/8/27
 -------------------------------------------------
 """
+import configparser
+import os
+
 from api.models import RZY, V22, AIOPS, SIEM, KHZC
 from api.serializers import RZYSerializer, V22Serializer, AIOPSSerializer, SIEMSerializer, KHZCSerializer
 
 
 class MyUtils(object):
+
+    def getConfig(self) -> dict:
+        cf = configparser.ConfigParser()
+        cf.read(os.getcwd() + "/JiraIssue/config.ini", encoding="utf-8")
+
+        # jira配置信息
+        JiraBaseUrl = cf.get('Jira', 'JiraBaseUrl')
+        JiraUserName = cf.get('Jira', 'JiraUserName')
+        JiraUserPasswd = cf.get('Jira', 'JiraUserPasswd')
+
+        # 定时任务
+        FullScanJira = cf.get('Crontab', 'FullScanJira')
+        FullUpdateJira = cf.get('Crontab', 'FullUpdateJira')
+
+        return dict(JiraBaseUrl=JiraBaseUrl, JiraUserName=JiraUserName, JiraUserPasswd=JiraUserPasswd,
+                    FullScanJira=FullScanJira, FullUpdateJira=FullUpdateJira)
 
     def getModelsObject(self, JiraType):
         global modelsType, serializer

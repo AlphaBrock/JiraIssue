@@ -16,21 +16,21 @@ import urllib3
 from lxml import etree
 
 from api.models import RZY
-import configparser, os
+from JiraIssue.utils.resource import MyUtils
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-log = logging.getLogger("django.console")
+log = logging.getLogger("django.spider")
 
 
 class Jira(object):
 
     def __init__(self):
-        cf = configparser.ConfigParser()
-        cf.read(os.getcwd() + "/JiraIssue/config.ini")
-        self.BaseUrl = cf.get('Jira', 'JiraBaseUrl')
-        self.JiraUserName = cf.get('Jira', 'JiraUserName')
-        self.JiraUserPasswd = cf.get('Jira', 'JiraUserPasswd')
+        self.BaseUrl = MyUtils().getConfig().get("JiraBaseUrl")
+        self.JiraUserName = MyUtils().getConfig().get("JiraUserName")
+        self.JiraUserPasswd = MyUtils().getConfig().get("JiraUserPasswd")
+
         self.Headers = {
             'Host': self.BaseUrl,
             'Origin': 'https://{}'.format(self.BaseUrl),
@@ -189,7 +189,7 @@ class Jira(object):
         log.debug(json.dumps(issueData, ensure_ascii=False))
         return issueData
 
-    def spider(self, startIndex, endIndex):
+    def FullScanJiraJob(self, startIndex, endIndex):
         issueDatas = []
         for issueKey in range(startIndex, endIndex):
             try:
@@ -202,4 +202,14 @@ class Jira(object):
                 time.sleep(1)
 
         RZY.objects.bulk_create(issueDatas)
-        log.info("执行完毕")
+
+    def FullUpdateJiraJob(self, issueData):
+        for issue in issueData:
+            try:
+                issueData = self.getIssueHtmlData(issue.get("issuePrefix"))
+                log.info(json.dumps(issueData, ensure_ascii=False))
+                RZY.objects.update(issuePrefix=issue.get("issuePrefix"), issueTitle=issueData.get("issueTitle"), issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"), issuePriority=issueData.get("issuePriority"), issueResolution=issueData.get("issueResolution"), issueAffectsVersions=issueData.get("issueAffectsVersions"), issueComponents=issueData.get("issueComponents"), issueFixVersions=issueData.get("issueFixVersions"), issueLabels=issueData.get("issueLabels"), issueDescription=issueData.get("issueDescription"), issueAssignee=issueData.get("issueAssignee"), issueReporter=issueData.get("issueReporter"), issueCreateTime=issueData.get("issueCreateTime"), issueUpdateTime=issueData.get("issueUpdateTime"))
+            except Exception as e:
+                log.exception(str(e))
+            finally:
+                time.sleep(1)

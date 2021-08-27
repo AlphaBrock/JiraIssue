@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-qh#lqp-h@8ri-uktx-n+-((lc!o-3gn98#fbqcpgeqdv)ppff=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -197,14 +197,6 @@ LOGGING = {
     }
 }
 
-try:
-    cf = configparser.ConfigParser()
-    cf.read(os.getcwd() + "/JiraIssue/config.ini")
-    JiraBaseUrl = cf.get('Jira', 'JiraBaseUrl')
-    JiraUserName = cf.get('Jira', 'JiraUserName')
-    JiraUserPasswd = cf.get('Jira', 'JiraUserPasswd')
-except Exception as e:
-    print(e)
 
 TIME_ZONE = 'Asia/Shanghai'
 USE_TZ = False
