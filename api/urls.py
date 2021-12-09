@@ -12,5 +12,5 @@ from api.views import Jira
 
 urlpatterns = [
     path('api/', Jira.as_view()),
-    re_path(r'^api/(?P<jiraType>[^\/]+)/(?P<jiraAction>[^\/]+)$', Jira.as_view())
+    re_path(r'^api/(?P<jiraType>[^\/]+)/(?P<jiraAction>[a-zA-Z]+)$', Jira.as_view())
 ]

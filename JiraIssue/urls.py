@@ -17,5 +17,5 @@ from django.urls import re_path, include
 
 urlpatterns = [
     re_path(r'^', include('api.urls')),
-    re_path(r'^', include('JiraIssue.spider.urls')),
+    # re_path(r'^', include('JiraIssue.spider.urls')),
 ]

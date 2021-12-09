@@ -15,9 +15,8 @@ import requests
 import urllib3
 from lxml import etree
 
-from api.models import RZY
 from JiraIssue.utils.resource import MyUtils
-
+from api.models import RZY
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -124,8 +123,6 @@ class Jira(object):
         :return:
         """
         url = "https://{}/browse/RZY-{}".format(self.BaseUrl, issueKey)
-        log.debug("issueKey:{}".format(url))
-        log.debug(json.dumps(self.Headers))
         result = self.httpRequests(url=url, method="GET", headers=self.Headers)
         parseHtml = self.parseResults(result.text)
 
@@ -191,25 +188,53 @@ class Jira(object):
 
     def FullScanJiraJob(self, startIndex, endIndex):
         issueDatas = []
+        counter = 0
         for issueKey in range(startIndex, endIndex):
             try:
                 issueData = self.getIssueHtmlData(str(issueKey))
                 log.info(json.dumps(issueData, ensure_ascii=False))
-                issueDatas.append(RZY(issuePrefix=issueKey, issueTitle=issueData.get("issueTitle"), issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"), issuePriority=issueData.get("issuePriority"), issueResolution=issueData.get("issueResolution"), issueAffectsVersions=issueData.get("issueAffectsVersions"), issueComponents=issueData.get("issueComponents"), issueFixVersions=issueData.get("issueFixVersions"), issueLabels=issueData.get("issueLabels"), issueDescription=issueData.get("issueDescription"), issueAssignee=issueData.get("issueAssignee"), issueReporter=issueData.get("issueReporter"), issueCreateTime=issueData.get("issueCreateTime"), issueUpdateTime=issueData.get("issueUpdateTime")))
+                issueDatas.append(RZY(issuePrefix=issueKey, issueTitle=issueData.get("issueTitle"),
+                                      issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"),
+                                      issuePriority=issueData.get("issuePriority"),
+                                      issueResolution=issueData.get("issueResolution"),
+                                      issueAffectsVersions=issueData.get("issueAffectsVersions"),
+                                      issueComponents=issueData.get("issueComponents"),
+                                      issueFixVersions=issueData.get("issueFixVersions"),
+                                      issueLabels=issueData.get("issueLabels"),
+                                      issueDescription=issueData.get("issueDescription"),
+                                      issueAssignee=issueData.get("issueAssignee"),
+                                      issueReporter=issueData.get("issueReporter"),
+                                      issueCreateTime=issueData.get("issueCreateTime"),
+                                      issueUpdateTime=issueData.get("issueUpdateTime")))
             except Exception as e:
                 log.exception(str(e))
+                counter += 1
             finally:
-                time.sleep(1)
-
-        RZY.objects.bulk_create(issueDatas)
+                if len(issueDatas) > 100 or counter > 20 or issueKey == endIndex:
+                    RZY.objects.bulk_create(issueDatas)
+                    issueDatas.clear()
+                    counter = 0
+                time.sleep(0.5)
 
     def FullUpdateJiraJob(self, issueData):
         for issue in issueData:
             try:
                 issueData = self.getIssueHtmlData(issue.get("issuePrefix"))
                 log.info(json.dumps(issueData, ensure_ascii=False))
-                RZY.objects.update(issuePrefix=issue.get("issuePrefix"), issueTitle=issueData.get("issueTitle"), issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"), issuePriority=issueData.get("issuePriority"), issueResolution=issueData.get("issueResolution"), issueAffectsVersions=issueData.get("issueAffectsVersions"), issueComponents=issueData.get("issueComponents"), issueFixVersions=issueData.get("issueFixVersions"), issueLabels=issueData.get("issueLabels"), issueDescription=issueData.get("issueDescription"), issueAssignee=issueData.get("issueAssignee"), issueReporter=issueData.get("issueReporter"), issueCreateTime=issueData.get("issueCreateTime"), issueUpdateTime=issueData.get("issueUpdateTime"))
+                RZY.objects.update(issuePrefix=issue.get("issuePrefix"), issueTitle=issueData.get("issueTitle"),
+                                   issueType=issueData.get("issueType"), issueStatus=issueData.get("issueStatus"),
+                                   issuePriority=issueData.get("issuePriority"),
+                                   issueResolution=issueData.get("issueResolution"),
+                                   issueAffectsVersions=issueData.get("issueAffectsVersions"),
+                                   issueComponents=issueData.get("issueComponents"),
+                                   issueFixVersions=issueData.get("issueFixVersions"),
+                                   issueLabels=issueData.get("issueLabels"),
+                                   issueDescription=issueData.get("issueDescription"),
+                                   issueAssignee=issueData.get("issueAssignee"),
+                                   issueReporter=issueData.get("issueReporter"),
+                                   issueCreateTime=issueData.get("issueCreateTime"),
+                                   issueUpdateTime=issueData.get("issueUpdateTime"))
             except Exception as e:
                 log.exception(str(e))
             finally:
-                time.sleep(1)
+                time.sleep(0.5)

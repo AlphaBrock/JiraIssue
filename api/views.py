@@ -22,9 +22,9 @@ class Jira(APIView):
     results = {}
 
     def issueNotice(self, request, modelsType, serializer, **kwargs):
-        limit = request.get("limit")
         try:
-            if int(limit) == 0 or not limit:
+            limit = request.get("limit")
+            if not limit:
                 limit = 10
             result = serializer(modelsType.objects.all().order_by('-id')[0:int(limit)], many=True)
             self.results["result"] = result.data
@@ -35,9 +35,9 @@ class Jira(APIView):
             return False, str(e)
 
     def issueSummary(self, request, modelsType, serializer, **kwargs):
-        startIndex = request.get("startIndex")
-        endIndex = request.get("endIndex")
         try:
+            startIndex = request.get("startIndex")
+            endIndex = request.get("endIndex")
             result = serializer(modelsType.objects.all().order_by('-id'), many=True)
             self.results["result"] = result.data[int(startIndex)-1:int(endIndex)]
             self.results["totalHits"] = len(result.data)
@@ -47,8 +47,8 @@ class Jira(APIView):
             return False, str(e)
 
     def issueSearch(self, request, modelsType, serializer, **kwargs):
-        issueReporter = request.get("issueReporter")
         try:
+            issueReporter = request.get("issueReporter")
             result = serializer(modelsType.objects.filter(issueReporter__contains=issueReporter), many=True)
             self.results["result"] = result.data
             self.results["totalHits"] = len(result.data)

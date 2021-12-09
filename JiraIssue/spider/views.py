@@ -39,19 +39,20 @@ try:
     def FullScanJiraJob():
         log.info("start to running full scan Job!")
         try:
-            result = RZYSerializer(RZY.objects.all().order_by("-id")[0], many=True)
-            startIndex = result.data.get("issuerefix") - 400
-            endIndex = startIndex + 100
+            result = RZYSerializer(RZY.objects.all().order_by('-id'), many=True)
+            startIndex = result.data[0].get("issuePrefix") + 1
+            endIndex = startIndex + 50
             JiraSpider.FullScanJiraJob(startIndex, endIndex)
         except Exception as e:
-            JiraSpider.FullScanJiraJob(1, 20)
+            log.exception(str(e))
+            JiraSpider.FullScanJiraJob(4000, 7600)
         log.info("finished the full scan Job!")
 
     @register_job(scheduler, CronTrigger.from_crontab(MyUtils().getConfig().get("FullUpdateJira")), misfire_grace_time=3600, id=None)
     def FullUpdateJiraJob():
         log.info("start to running full update Job!")
         try:
-            result = RZYSerializer(RZY.objects.exclude(Q(issueStatus="已关闭") | Q(issueStatus="已解决")), many=True)
+            result = RZYSerializer(RZY.objects.exclude((Q(issueStatus="已关闭") | Q(issueStatus="已解决") | Q(issueStatus="完成")) & Q(createDate__day__gte=20)), many=True)
             log.info("当前{}个Issue需要更新".format(len(result.data)))
             JiraSpider.FullUpdateJiraJob(result.data)
         except Exception as e:
